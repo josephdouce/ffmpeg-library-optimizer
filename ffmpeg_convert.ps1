@@ -2,7 +2,6 @@
     [switch]$list = $false,
     [switch]$container = $false,
     [switch]$transcode = $false
-    [switch]$transcode_audio = $false
  )
 
 #get all files in the directory recirsivley with included extensions
@@ -13,6 +12,7 @@ $file_info = @()
 
 #iterate over the files and get the audio and video codecs
 for ($i=0; $i -lt $file_names.Count; $i++){
+    Write-Host "Processing:" $file_names[$i].Name
     #get the video codec
     $video_codec = C:\tools\ffmpeg-3.4.1\bin\ffprobe.exe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 $file_names[$i].FullName
     #get the audio codec 
@@ -29,8 +29,9 @@ for ($i=0; $i -lt $file_names.Count; $i++){
 }
 
 if ($list) {
-    Write-Host ($file_info | Format-Table -Property "Name", "Extension", "Video Codec", "Audio Codec" | Out-String)
+    Write-Host ($file_info | Format-Table -Property @{e='Name'; width =60 }, @{e='Extension'; width =10 }, @{e='Audio Codec'; width =10 }, @{e='Video Codec'; width =10 } | Out-String) 
 }
+
 #itterate through the array of files 
 foreach ($file in $file_info){
 
@@ -51,10 +52,10 @@ foreach ($file in $file_info){
     $argument_list = " -i """ + $file."Full Name" + """ -c:v " + $video_codec_out + " -c:a " + $audio_codec_out + " """ + $new_file_name + """ -hide_banner"
     
     #if container flag is set dont transcode only change containers
-    if ($container -or $transcode) {
+    if ($container) {
         #check if the file needs transcoding
         if (($video_codec_out -eq "copy") -and ($audio_codec_out -eq "copy")) {
-            #start ffmpeg
+            #start ffmpeg1q
             Start-Process -FilePath C:\tools\ffmpeg-3.4.1\bin\ffmpeg.exe $argument_list -Wait -NoNewWindow
             #delete origional
             Remove-Item $file."Full Name"
