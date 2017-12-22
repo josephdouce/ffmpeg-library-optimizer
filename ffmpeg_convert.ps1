@@ -1,8 +1,8 @@
- param (
+param (
     [switch]$list = $false,
     [switch]$container = $false,
     [switch]$transcode = $false
- )
+)
 
 #get all files in the directory recirsivley with included extensions
 $file_names = Get-Childitem -File -Include *.mkv, *avi -Recurse
@@ -49,7 +49,7 @@ foreach ($file in $file_info){
     }
    
     $new_file_name = [io.path]::ChangeExtension($file."Full Name", '.mp4')
-    $argument_list = " -i """ + $file."Full Name" + """ -c:v " + $video_codec_out + " -c:a " + $audio_codec_out + " """ + $new_file_name + """ -hide_banner"
+    $argument_list = " -i """ + $file."Full Name" + """ -c:v " + $video_codec_out + " -c:a " + $audio_codec_out + " -preset veryfast """ + $new_file_name + """ -hide_banner"
     
     #if container flag is set dont transcode only change containers
     if ($container) {
