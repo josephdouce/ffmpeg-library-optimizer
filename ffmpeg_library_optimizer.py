@@ -30,7 +30,7 @@ def get_data(fileList):
     print('getting codec data this might take a while...') 
     fileData = []
     for file in fileList:
-        print('processing: ' + file)
+        print('processing file: ' + file)
         try:
             values = {}
             acodec = (subprocess.check_output('ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "' + file + '"'))
@@ -49,7 +49,6 @@ def get_data(fileList):
 
 #check the file extension, return true if mp4
 def check_mp4(item):
-    print('checking if file is mp4...')
     if(item['path'][-3:] == 'mp4'):
         print(color('file is mp4', fg='green'))
         return True
@@ -58,7 +57,6 @@ def check_mp4(item):
 
 #check the codecs, return true if h264 and aac/mp3
 def check_codecs(item):
-    print('checking if file needs transcoding...')
     if((item['vcodec'] == 'h264') and (item['acodec'] == 'mp3' or item['acodec'] == 'aac')):
         print(color('file is transcoded using h264 and aac/mp3', fg='green'))
         return True
@@ -67,7 +65,6 @@ def check_codecs(item):
 
 #check the moov atom using qtfaststart, return true if file is web optimized        
 def check_optimized(item):
-    print('checking if file is optimized...')
     try:
         optimized = subprocess.check_output('C:\Python27\python.exe -m qtfaststart -l "' + item['path'] + '"').splitlines()[1][0:4]
     except:
@@ -91,8 +88,9 @@ def data():
     print tabulate(get_data(get_files()))
 
 #check the moov atom of mpv files to ensure it is at the start of the file for quick streaming, also check container is mp4                   
-def optimize():
+def optimize(item):
     #check file doesnt need transcode
+    print('checking file: ' + item['path'])
     if(check_codecs(item)):
         #check if not optimized or not mp4
         if not (check_optimized(item) and check_mp4(item)):
@@ -117,9 +115,10 @@ def optimize():
                 os.rename(tempfile, item['path'])
 
 #check if file needs transcoding, if it does, transcode, otherwise, copy the streams                     
-def transcode():
+def transcode(item):
     #if item is already mp4 and correctly transcoded, skip to next file
-    if (check_mp4(item) and check_codecs(item) and check_optimized(item)):
+    print('checking file: ' + item['path'])
+    if (check_codecs(item) and check_mp4(item) and check_optimized(item)):
         pass
     else:
         #generate temp file name
@@ -161,10 +160,10 @@ if args.data:
 
 if args.optimize:
     for item in get_data(get_files()):
-        optimize()
+        optimize(item)
                    
 if args.transcode:
     for item in get_data(get_files()):
-        transcode()
+        transcode(item)
             
 
