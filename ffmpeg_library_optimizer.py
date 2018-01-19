@@ -4,13 +4,11 @@ import fnmatch
 import os
 import subprocess
 import time
-from colors import color
 from tabulate import tabulate
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 class Optimizer:
-
     # walk through directorys recursivley and get list of files
     def get_files(self):
         fileList = []
@@ -43,18 +41,18 @@ class Optimizer:
     #check the file extension, return true if mp4
     def check_mp4(self, file):
         if(file['path'][-3:] == 'mp4'):
-            print(color('file is mp4', fg='green'))
+            print('file is mp4')
             return True
         else:
-            print(color('file is not mp4', fg='red'))
+            print('file is not mp4')
 
     #check the codecs, return true if h264 and aac/mp3
     def check_codecs(self, file):
         if((file['vcodec'] == 'h264') and (file['acodec'] == 'mp3' or file['acodec'] == 'aac')):
-            print(color('file is transcoded using h264 and aac/mp3', fg='green'))
+            print('file is transcoded using h264 and aac/mp3')
             return True
         else:
-            print(color('file requires transcoding', fg='red'))
+            print('file requires transcoding')
 
     #check the moov atom using qtfaststart, return true if file is web optimized        
     def check_optimized(self, file):
@@ -64,10 +62,10 @@ class Optimizer:
             optimized = " "
             print('could not get optimized status')
         if(optimized == "moov"):
-            print(color('file is optimized', fg='green'))
+            print('file is optimized')
             return True
         else:
-            print(color('file is not optimized', fg='red'))
+            print('file is not optimized')
 
     #print a list of file names 
     def list(self):
@@ -98,7 +96,7 @@ class Optimizer:
                 try:
                     subprocess.check_output('ffmpeg -loglevel info -y -i "' + tempfile + '" -c:v copy -c:a copy -movflags faststart "' + newfile + '"')
                 except: 
-                    print(color('could not optimize file', fg='red'))
+                    print('could not optimize file')
                 #if new file exists delete the temp file
                 if os.path.isfile(newfile):
                     try:
@@ -135,7 +133,7 @@ class Optimizer:
             try:
                 subprocess.check_output('ffmpeg -loglevel info -y -i "' + tempfile + '" -c:v ' + vcodec + ' -c:a ' + acodec + ' -preset veryfast -movflags faststart -r 24 "' + newfile + '"')
             except: 
-                print(color('could not transcode file', fg='red'))
+                print('could not transcode file')
             #if new file exists delete the temp file
             if os.path.isfile(newfile):
                 try:

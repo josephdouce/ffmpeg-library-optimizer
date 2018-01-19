@@ -1,3 +1,2 @@
-ansicolors
 tabulate
 watchdog
