@@ -9,15 +9,30 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 class Optimizer:
-    # walk through directorys recursivley and get list of files
+    # add item to ignore list 
+    def ignore_file(self, file):
+        ignoreFile = open(os.path.dirname(os.path.realpath(__file__))  + '\ignore.txt', 'a')
+        ignoreFile.write(file + '\n')
+        ignoreFile.close()
+        print("file added to ignore list")
+            
+    # walk through directorys recursivley and get list of files not in ignore list
     def get_files(self):
+        ignoreFile = open(os.path.dirname(os.path.realpath(__file__))  + '\ignore.txt', 'r+')
+        ignoreList = ignoreFile.readlines()
+        ignoreFile.close()
+        ignoreList = [x.strip() for x in ignoreList] 
         fileList = []
         currentdir = os.getcwd()
         extentions = ['*.mp4', '*.mkv', '*.avi']
         for root, dirnames, filenames in os.walk(currentdir):
             for extension in extentions:
                 for filename in fnmatch.filter(filenames, extension):
-                    fileList.append(os.path.join(root, filename))
+                    # ignore _temp files
+                    if not (filename[-9:-4] == '_temp'):
+                        # ignore files in ignore list
+                        if not os.path.join(root, filename) in ignoreList:
+                            fileList.append(os.path.join(root, filename))
         return fileList
         
     #use ffprobe to get the codec data for each file and store in an list of dict    
@@ -32,7 +47,7 @@ class Optimizer:
             values['acodec'] = acodec.strip()           
         except:
             values = {}
-            values['path'] = file                                                                                                                                        
+            values['path'] = file
             values['vcodec'] = ""
             values['acodec'] = ""
             print('could not get file data')
@@ -84,8 +99,11 @@ class Optimizer:
         #check file doesnt need transcode
         print('checking file: ' + file['path'])
         if(self.check_codecs(file)):
-            #check if not optimized or not mp4
-            if not (self.check_optimized(file) and self.check_mp4(file)):
+            #check if  optimized and mp4, ignore if file already meets criteria
+            if (self.check_optimized(file) and self.check_mp4(file)):
+                self.ignore_file(file['path'])
+            # process the file
+            else:
                 #generate temp file name
                 tempfile = file['path'][:-4] + "_temp" + file['path'][-4:]
                 #generate new file name
@@ -97,10 +115,11 @@ class Optimizer:
                     subprocess.check_output('ffmpeg -loglevel info -y -i "' + tempfile + '" -c:v copy -c:a copy -movflags faststart "' + newfile + '"')
                 except: 
                     print('could not optimize file')
-                #if new file exists delete the temp file
+                #if new file exists delete the temp file and ignore it in future
                 if os.path.isfile(newfile):
                     try:
                         os.remove(tempfile)
+                        self.ignore_file(file['path'])
                     except:
                         pass
                 else:
@@ -108,10 +127,10 @@ class Optimizer:
 
     #check if file needs transcoding, if it does, transcode, otherwise, copy the streams                     
     def transcode(self, file):
-        #if file is already mp4 and correctly transcoded, skip to next file
+        #if file is already mp4 and correctly transcoded, if so add to ignore list
         print('checking file: ' + file['path'])
         if (self.check_codecs(file) and self.check_mp4(file) and self.check_optimized(file)):
-            pass
+            self.ignore_file(file['path'])
         else:
             #generate temp file name
             tempfile = file['path'][:-4] + "_temp" + file['path'][-4:]
@@ -134,10 +153,11 @@ class Optimizer:
                 subprocess.check_output('ffmpeg -loglevel info -y -i "' + tempfile + '" -c:v ' + vcodec + ' -c:a ' + acodec + ' -preset veryfast -movflags faststart -r 24 "' + newfile + '"')
             except: 
                 print('could not transcode file')
-            #if new file exists delete the temp file
+            #if new file exists delete the temp file and ignore it in future
             if os.path.isfile(newfile):
                 try:
                     os.remove(tempfile)
+                    self.ignore_file(file['path'])
                 except:
                     pass
             #if new file doesn't exist put back the old file
@@ -194,23 +214,22 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--watch', action='store_true', help='watch the directory for changes and transcode new files')
     args = parser.parse_args()
 
-    optimize = Optimizer()
-    files = optimize.get_files()
+    optimizer = Optimizer()
+    files = optimizer.get_files()
         
     if args.list:
-        optimize.list()
+        optimizer.list()
       
     if args.data:
-        optimize.data()
+        optimizer.data()
 
     if args.optimize:                             
         for file in files:
-            optimize.optimize(optimize.get_data(file))
+            optimizer.optimize(optimizer.get_data(file))
                                           
     if args.transcode:
         for file in files:
-            optimize.transcode(optimize.get_data(file))
-
+            optimizer.transcode(optimizer.get_data(file))
     if args.watch:
         w = Watcher()
         w.run()
