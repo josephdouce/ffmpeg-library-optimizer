@@ -11,14 +11,14 @@ from watchdog.events import FileSystemEventHandler
 class Optimizer:
     # add item to ignore list 
     def ignore_file(self, file):
-        ignoreFile = open(os.path.dirname(os.path.realpath(__file__))  + '\ignore.txt', 'a')
+        ignoreFile = open(os.path.dirname(os.path.realpath(__file__))  + '\ignore.txt', 'a+')
         ignoreFile.write(file + '\n')
         ignoreFile.close()
         print("file added to ignore list")
             
     # walk through directorys recursivley and get list of files not in ignore list
     def get_files(self):
-        ignoreFile = open(os.path.dirname(os.path.realpath(__file__))  + '\ignore.txt', 'r+')
+        ignoreFile = open(os.path.dirname(os.path.realpath(__file__))  + '\ignore.txt', 'a+')
         ignoreList = ignoreFile.readlines()
         ignoreFile.close()
         ignoreList = [x.strip() for x in ignoreList] 
@@ -92,7 +92,7 @@ class Optimizer:
         fileData = []
         for file in self.get_files():
             fileData.append(self.get_data(file))
-        print tabulate(fileData)
+        print(tabulate(fileData))
 
     #check the moov atom of mpv files to ensure it is at the start of the file for quick streaming, also check container is mp4                   
     def optimize(self, file):
@@ -180,10 +180,10 @@ class Watcher:
                 time.sleep(5)
         except KeyboardInterrupt:
             self.observer.stop()
-            print "Watcher Stopped"
+            print("Watcher Stopped")
         except:
             self.observer.stop()
-            print "Error"
+            print("Error")
 
         self.observer.join()
 
@@ -197,11 +197,11 @@ class Handler(FileSystemEventHandler):
 
         elif event.event_type == 'created':
             # Take any action here when a file is first created.
-            print "Received created event - %s." % event.src_path
+            print("Received created event - %s.") % event.src_path
 
         elif event.event_type == 'modified':
             # Taken any action here when a file is modified.
-            print "Received modified event - %s." % event.src_path
+            print("Received modified event - %s.") % event.src_path
 
 if __name__ == '__main__':
     
